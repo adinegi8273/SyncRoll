@@ -1,0 +1,172 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Faculty Dashboard</title>
+
+    <style>
+      body {
+        font-family: Arial;
+        background: #f4f6f8;
+        text-align: center;
+      }
+
+      .container {
+        width: 80%;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        margin-top: 50px;
+        border-radius: 10px;
+      }
+
+      select,
+      button {
+        padding: 10px;
+        margin: 10px;
+      }
+
+      table {
+        width: 100%;
+        margin-top: 20px;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid #ddd;
+      }
+
+      th {
+        background: #007bff;
+        color: white;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h2>Faculty Dashboard</h2>
+
+      <select id="section">
+        <option value="">Select Section</option>
+      </select>
+
+      <select id="subject">
+        <option value="">Select Subject</option>
+      </select>
+
+      <button onclick="loadStudents()">Load Students</button>
+
+      <table id="studentTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Present</th>
+            <th>Absent</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <button onclick="submitAttendance()">Submit Attendance</button>
+    </div>
+
+    <script>
+      const faculty_id = localStorage.getItem("faculty_id");
+
+      if (!faculty_id) {
+        alert("Please login first");
+        window.location.href = "login.html";
+      }
+      
+      async function loadDropdowns() {
+        const res = await fetch(`http://127.0.0.1:8000/faculty/${faculty_id}`);
+        const data = await res.json();
+
+        let sectionSet = new Set();
+        let subjectSet = new Set();
+
+        data.forEach((item) => {
+          sectionSet.add(
+            JSON.stringify({ id: item.section_id, name: item.section_name }),
+          );
+          subjectSet.add(
+            JSON.stringify({ id: item.subject_id, name: item.subject_name }),
+          );
+        });
+
+        const sectionDropdown = document.getElementById("section");
+        const subjectDropdown = document.getElementById("subject");
+
+        sectionSet.forEach((s) => {
+          let obj = JSON.parse(s);
+          sectionDropdown.innerHTML += `<option value="${obj.id}">${obj.name}</option>`;
+        });
+
+        subjectSet.forEach((s) => {
+          let obj = JSON.parse(s);
+          subjectDropdown.innerHTML += `<option value="${obj.id}">${obj.name}</option>`;
+        });
+      }
+
+      async function loadStudents() {
+        const section_id = document.getElementById("section").value;
+
+        const res = await fetch(`http://127.0.0.1:8000/students/${section_id}`);
+        const students = await res.json();
+
+        const tbody = document.querySelector("#studentTable tbody");
+        tbody.innerHTML = "";
+
+        students.forEach((student) => {
+          tbody.innerHTML += `
+                <tr>
+                    <td>${student.name}</td>
+                    <td><input type="radio" name="att_${student.id}" value="present"></td>
+                    <td><input type="radio" name="att_${student.id}" value="absent"></td>
+                </tr>
+            `;
+        });
+      }
+
+      async function submitAttendance() {
+        const section_id = document.getElementById("section").value;
+        const subject_id = document.getElementById("subject").value;
+
+        const rows = document.querySelectorAll("#studentTable tbody tr");
+        let attendance = [];
+
+        rows.forEach((row) => {
+          const student_id = row.querySelector("input").name.split("_")[1];
+          const checked = row.querySelector("input:checked");
+
+          if (checked) {
+            attendance.push({
+              student_id: parseInt(student_id),
+              status: checked.value,
+            });
+          }
+        });
+
+        const res = await fetch("http://127.0.0.1:8000/attendance", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            faculty_id,
+            section_id,
+            subject_id,
+            attendance,
+          }),
+        });
+
+        const data = await res.json();
+        alert(data.message);
+      }
+
+      loadDropdowns();
+    </script>
+  </body>
+</html>
