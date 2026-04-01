@@ -1,0 +1,65 @@
+
+
+
+CREATE DATABASE syncroll;
+
+
+CREATE TABLE faculty (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL
+);
+
+
+CREATE TABLE sections (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(20) UNIQUE NOT NULL
+);
+
+
+CREATE TABLE subjects (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL
+);
+
+
+CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    section_id INTEGER,
+    FOREIGN KEY (section_id) REFERENCES sections(id)
+);
+
+
+CREATE TABLE faculty_assignments (
+    id SERIAL PRIMARY KEY,
+    faculty_id INTEGER,
+    section_id INTEGER,
+    subject_id INTEGER,
+    
+    FOREIGN KEY (faculty_id) REFERENCES faculty(id),
+    FOREIGN KEY (section_id) REFERENCES sections(id),
+    FOREIGN KEY (subject_id) REFERENCES subjects(id)
+);
+
+
+INSERT INTO sections (name) VALUES 
+('CSE-A'),
+('CSE-B');
+
+
+INSERT INTO subjects (name) VALUES 
+('DBMS'),
+('Maths');
+
+INSERT INTO students (name, section_id) VALUES
+('Rahul', 1),
+('Amit', 1),
+('Sneha', 2);
+
+
+INSERT INTO faculty (username, password_hash)
+VALUES ('faculty1@gmail.com', 'TEMP_HASH');
+
+INSERT INTO faculty_assignments (faculty_id, section_id, subject_id)
+VALUES (1, 1, 1);
